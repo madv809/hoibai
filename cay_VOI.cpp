@@ -15,14 +15,20 @@ const int mxk = 2e3 + 5;
 const int INF = 1e9 + 7;
 const LL base = 311;
 const LL MOD = 1e9 + 7;
-int n, q;
-LL Q[mxn], P[mxn], pow_base[mxn], deg[mxn], a[mxn], b[mxn], sz[mxn], global, ans4;
+int  a[mxn], b[mxn], n, q;
+LL Q[mxn], P[mxn], pow_base[mxn], deg[mxn], sz[mxn], global, ans4;
 map<LL, LL> QP;
 
-// cái mảng sz[] luôn là số âm đấy ạ
-// với cả deg[mxn], a[mxn], b[mxn], sz[mxn], global luôn <= n
-// còn riêng ans4 luôn <= n^2 nên em nghĩ nó không tràn chỗ mấy thằng này;
+// deg[mxn], sz[mxn], global, luôn < = n
+// riêng ans4 <= n^2 nên em nghĩ mấy cái này sẽ không tràn số được
 
+// P[i] là mã hash của các số trên dãy ban đầu
+// Q[i] là mã hash của các số trên dãy đã sort
+//global là số lượng tập node mà có Q[i] != P[i]
+//truy vấn 3 sẽ ra DA nếu global = 0 và ngược lại
+// ans4 là đáp án cho truy vấn 4
+
+// hợp 2 tập lại
 int uni(const int &u, const int &v)
 {
     if (sz[u] > sz[v]) return uni(v, u);
@@ -33,79 +39,49 @@ int uni(const int &u, const int &v)
     return u;
 }
 
+//tìm node đại diện của tập mà node u đang ở trong
 int findd(const int &u)
 {
     if (sz[u] < 0) return u;
     return (sz[u] = findd(sz[u]));
 }
 
-void Query2(int u, int v)
+// update lại
+void de(const int &i, const LL &val)
 {
-    // tính lại global và ans4
-    int x = findd(u), y = findd(v);
-    if (x == y) return;
-    if (Q[x] != P[x])
-    {
-        --global;
-        ans4 += sz[x]*QP[(P[x] - Q[x] + MOD)%MOD];
-        QP[(Q[x] - P[x] + MOD)%MOD] += sz[x];
-    }
-    if (Q[y] != P[y])
-    {
-        --global;
-        ans4 += sz[y]*QP[(P[y] - Q[y] + MOD)%MOD];
-        QP[(Q[y] - P[y] + MOD)%MOD] += sz[y];
-    }
-
-    int par = uni(x, y);
-    if (Q[par] != P[par])
-    {
-        ++global;
-        ans4 -= sz[par]*QP[(P[par] - Q[par] + MOD)%MOD];
-        QP[(Q[par] - P[par] + MOD)%MOD] -= sz[par];
-    }
+    if (P[i] == Q[i]) return;
+    LL x = P[i] - Q[i];
+    global += val;
+    ans4 += -sz[i]*QP[(x + MOD)%MOD]*val;
+    QP[(MOD - x)%MOD] += -sz[i]*val;
 }
 
+// Thao tác 1
 void Query1(int u, int v)
 {
     int x = findd(u), y = findd(v);
-    //cout << u << ' ' << v << endl;
-    //cout << x << ' ' << y; exit(0);
     if (x == y) {swap(a[u], a[v]); return;}
 
-    if (Q[x] != P[x])
-    {
-        --global;
-        ans4 += sz[x]*QP[(P[x] - Q[x] + MOD)%MOD];
-        QP[(Q[x] - P[x] + MOD)%MOD] += sz[x];
-    }
-    if (Q[y] != P[y])
-    {
-        --global;
-        ans4 += sz[y]*QP[(P[y] - Q[y] + MOD)%MOD];
-        QP[(Q[y] - P[y] + MOD)%MOD] += sz[y];
-    }
+    de(x, -1); de(y, -1);
 
     P[x] -= pow_base[deg[a[u]]];
     (P[x] += pow_base[deg[a[v]]] + MOD)%=MOD;
     P[y] -= pow_base[deg[a[v]]];
     (P[y] += pow_base[deg[a[u]]] + MOD)%=MOD;
 
-    if (P[x] != Q[x])
-    {
-        ++global;
-        ans4 -= sz[x]*QP[(P[x] - Q[x] + MOD)%MOD];
-        QP[(Q[x] - P[x] + MOD)%MOD] -= sz[x];
-    }
+    de(x, 1); de(y, 1);
+    swap(a[u], a[v]); return;
+}
 
-    if (P[y] != Q[y])
-    {
-        ++global;
-        ans4 -= sz[y]*QP[(P[y] - Q[y] + MOD)%MOD];
-        QP[(Q[y] - P[y] + MOD)%MOD] -= sz[y];
-    }
+// Thao tác 2
+void Query2(int u, int v)
+{
+    int x = findd(u), y = findd(v);
+    if (x == y) return;
 
-    swap(a[u], a[v]);
+    de(x, -1); de(y, -1);
+    int par = uni(x, y);
+    de(par, 1); return;
 }
 
 int main()
@@ -115,26 +91,30 @@ int main()
     cin >> n >> q;
     REP(i, 1, n)
     {
-        scanf("%lli", &a[i]);
+        scanf("%d", &a[i]);
         b[i] = a[i];
     }
-    int t = 0;
     sort(b + 1, b + n + 1);
+    int t = 0;
     REP(i, 1, n)
     {
         if (b[i] != b[i - 1]) ++t;
         deg[b[i]] = t;
     }
-    pow_base[0] = 1; REP(i, 1, n) pow_base[i] = (LL)base*pow_base[i - 1]%MOD;
+    pow_base[0] = 1;
+    REP(i, 1, n) pow_base[i] = base*pow_base[i - 1]%MOD;
+
+    // tính toán cho đáp án cho dãy ban đầu
+    LL x;
     REP(i, 1, n)
     {
         P[i] = pow_base[deg[a[i]]];
         Q[i] = pow_base[deg[b[i]]];
         if (P[i] != Q[i])
         {
-            ++global;
-            ans4 += QP[(P[i] - Q[i] + MOD)%MOD];
-            ++QP[(Q[i] - P[i] + MOD)%MOD];
+            ++global; x = P[i] - Q[i];
+            ans4 += QP[(x + MOD)%MOD];
+            ++QP[(MOD - x)%MOD];
         }
     }
 
@@ -155,6 +135,5 @@ int main()
             else printf("NE\n");
         }
         else printf("%lli\n", ans4);
-    //if (i == 3) {cout << ans4; return 0;}
     }
 }
