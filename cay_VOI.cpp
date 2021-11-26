@@ -6,134 +6,103 @@
 #define pLL pair<LL, LL>
 #define X first
 #define Y second
+#define ci const int
+#define cLL const LL
 
 #define pb push_back
 #define ef else if
 using namespace std;
-const int mxn = 1e6 + 5;
-const int mxk = 2e3 + 5;
-const int INF = 1e9 + 7;
+const int mxn = 1e3 + 5;
+const int mxk = 2500 + 5;
+const int INF = 1e8;
 const LL base = 311;
 const LL MOD = 1e9 + 7;
-int  a[mxn], b[mxn], n, q;
-LL Q[mxn], P[mxn], pow_base[mxn], deg[mxn], sz[mxn], global, ans4;
-map<LL, LL> QP;
+int a[mxn][mxn], b[mxn][mxn], vis[mxn], open[mxn], n, t;
+LL pow_base[mxn], Hash[mxn][mxn];
+char sz;
+string s[mxn];
 
-// deg[mxn], sz[mxn], global, luôn < = n
-// riêng ans4 <= n^2 nên em nghĩ mấy cái này sẽ không tràn số được
-
-// P[i] là mã hash của các số trên dãy ban đầu
-// Q[i] là mã hash của các số trên dãy đã sort
-//global là số lượng tập node mà có Q[i] != P[i]
-//truy vấn 3 sẽ ra DA nếu global = 0 và ngược lại
-// ans4 là đáp án cho truy vấn 4
-
-// hợp 2 tập lại
-int uni(const int &u, const int &v)
+bool dfs_find_cycle(char u)
 {
-    if (sz[u] > sz[v]) return uni(v, u);
-    sz[u] += sz[v];
-    sz[v] = u;
-    (P[u] += P[v])%=MOD;
-    (Q[u] += Q[v])%=MOD;
-    return u;
+    open[u] = 1;
+    for (char ch = 'a'; ch <= sz; ++ch) if (a[u][ch] == 1)
+    {
+        if (open[ch] == 0) if (dfs_find_cycle(ch)) return 1;
+        ef (open[ch] == 1) return 1;
+    }
+    open[u] = 2;
+    return 0;
 }
 
-//tìm node đại diện của tập mà node u đang ở trong
-int findd(const int &u)
+void dfs_creat_mat(char u, char p)
 {
-    if (sz[u] < 0) return u;
-    return (sz[u] = findd(sz[u]));
-}
-
-// update lại
-void de(const int &i, const LL &val)
-{
-    if (P[i] == Q[i]) return;
-    LL x = P[i] - Q[i];
-    global += val;
-    ans4 += -sz[i]*QP[(x + MOD)%MOD]*val;
-    QP[(MOD - x)%MOD] += -sz[i]*val;
-}
-
-// Thao tác 1
-void Query1(int u, int v)
-{
-    int x = findd(u), y = findd(v);
-    if (x == y) {swap(a[u], a[v]); return;}
-
-    de(x, -1); de(y, -1);
-
-    P[x] -= pow_base[deg[a[u]]];
-    (P[x] += pow_base[deg[a[v]]] + MOD)%=MOD;
-    P[y] -= pow_base[deg[a[v]]];
-    (P[y] += pow_base[deg[a[u]]] + MOD)%=MOD;
-
-    de(x, 1); de(y, 1);
-    swap(a[u], a[v]); return;
-}
-
-// Thao tác 2
-void Query2(int u, int v)
-{
-    int x = findd(u), y = findd(v);
-    if (x == y) return;
-
-    de(x, -1); de(y, -1);
-    int par = uni(x, y);
-    de(par, 1); return;
+    vis[u] = t;
+    for (char ch = 'a'; ch <= sz; ++ch) if (a[u][ch] == 1)
+    {
+        if (vis[ch] == t) continue;
+        b[p][ch] = 1; b[ch][p] = -1;
+        dfs_creat_mat(ch, p);
+    }
 }
 
 int main()
 {
     //freopen("D:\\test.txt", "r", stdin);
     //freopen("D:\\test2.txt", "w", stdout);
-    cin >> n >> q;
+    cin >> sz >> n;
+    pow_base[0] = 1; REP(i, 1, mxn) pow_base[i] = base*pow_base[i - 1]%MOD;
     REP(i, 1, n)
     {
-        scanf("%d", &a[i]);
-        b[i] = a[i];
-    }
-    sort(b + 1, b + n + 1);
-    int t = 0;
-    REP(i, 1, n)
-    {
-        if (b[i] != b[i - 1]) ++t;
-        deg[b[i]] = t;
-    }
-    pow_base[0] = 1;
-    REP(i, 1, n) pow_base[i] = base*pow_base[i - 1]%MOD;
-
-    // tính toán cho đáp án cho dãy ban đầu
-    LL x;
-    REP(i, 1, n)
-    {
-        P[i] = pow_base[deg[a[i]]];
-        Q[i] = pow_base[deg[b[i]]];
-        if (P[i] != Q[i])
-        {
-            ++global; x = P[i] - Q[i];
-            ans4 += QP[(x + MOD)%MOD];
-            ++QP[(MOD - x)%MOD];
-        }
+        cin >> s[i];
+        for (int j = 1; j <= (int)(s[i].size()); ++j)
+            Hash[i][j] = (Hash[i][j - 1] + (LL)s[i][j - 1]*pow_base[j]%MOD)%MOD;
     }
 
-    REP(i, 1, n) sz[i] = -1;
-    int u, v;
-    REP(i, 1, q)
+    FOR(i, 1, n) REP(j, i + 1, n)
     {
-        scanf("%d", &t);
-        if (t <= 2)
+        int l = 0, r = (int)min(s[i].size(), s[j].size());
+        while(l < r)
         {
-            scanf("%d%d", &u, &v);
-            if (t == 1) Query1(u, v);
-            else Query2(u, v);
+            int mid = (l + r + 1)>>1;
+            if (Hash[i][mid] == Hash[j][mid]) l = mid;
+            else r = mid - 1;
         }
-        ef (t == 3)
+        if (l == (int)min(s[i].size(), s[j].size())) continue;
+        char u = s[i][l], v = s[j][l];
+        if (a[v][u] == 1) {cout << "IMPOSSIBLE"; return 0;}
+        a[u][v] = 1; a[v][u] = -1;
+    }
+
+    for (char ch = 'a'; ch <= sz; ++ch) if (open[ch] == 0)
+        if (dfs_find_cycle(ch)) {cout << "IMPOSSIBLE"; return 0;}
+
+    for (char ch = 'a'; ch <= sz; ++ch)
+    {
+        ++t;
+        dfs_creat_mat(ch, ch);
+    }
+
+    /*for (char ch1 = 'a'; ch1 <= sz; ++ch1)
+    {
+        for (char ch2 = 'a'; ch2 <= sz; ++ch2) cout << b[ch1][ch2] << ' ';
+        cout << endl;
+    }
+    return 0;*/
+
+
+    for (char ch1 = 'a'; ch1 <= sz; ++ch1)
+        for (char ch2 = 'a'; ch2 <= sz; ++ch2) if (ch1 != ch2 && (b[ch1][ch2] == 0 || b[ch2][ch1] == 0))
+        {cout << "AMBIGUOUS"; return 0;}
+
+    for (int i = (int)(sz - 'a'); i >= 0; --i)
+    {
+        for (char ch = 'a'; ch <= 'z'; ++ch)
         {
-            if (global == 0) printf("DA\n");
-            else printf("NE\n");
+            int cnt = 0;
+            for (char x = 'a'; x <= sz; ++x) if (b[ch][x] == 1) ++cnt;
+            if (cnt != i) continue;
+            cout << ch;
+            break;
         }
-        else printf("%lli\n", ans4);
     }
 }
