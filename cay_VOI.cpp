@@ -161,6 +161,7 @@ void mini2 (pLL &a, pLL b)
     ef (a.X == b.X) (a.Y += b.Y)%=MOD;
 }
 
+//dp bit mask
 pLL solve(int u, int mask)
 {
     if (vis[u][mask]) return dp[u][mask];
@@ -181,12 +182,18 @@ int main()
     //freopen("D:\\test.txt", "r", stdin);
     //freopen("D:\\test2.txt", "w", stdout);
     ios::sync_with_stdio(false); cin.tie(NULL);
+    
+    // tạo đồ thị
     creat_graph();
+    
+    // spec là tập các đỉnh cần được phát quà
     for (int u : spec)
     {
         vis[node_dp[u]][0] = 1;
         dp[node_dp[u]][0] = path[node_dp[u]][node_dp[1]];
     }
+    
+    // dp bit mask 
     int mask = (1 << k) - 1;
     if (node_dp[1] != k && node_dp[1] != -1) mask^=(1 << node_dp[1]);
     pLL x = solve(node_dp[1], mask);
