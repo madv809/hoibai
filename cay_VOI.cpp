@@ -25,7 +25,7 @@ vector<int> a[mxk], target[mxk], op[mxk];
 LL match[mxn][mxn], win[mxn], max_win[mxn], f[4*mxk], c[4*mxk], global_match;
 int d[mxk], n, m, nn, s, t, st;
 
-// match và win là số trận đấu như dữ kiện đề cho
+// match và win là số trận đấu và số trận đã thắng như dữ kiện đề cho
 // global_match là tổng số trận đấu sẽ xảy ra
 // max_win[i] là số trận nhiều nhất mà i có thể thắng được
 // f và c là luồng và cap của cạnh
