@@ -45,7 +45,7 @@ void creat_graph()
     s = m = 0;
     nn = n;
 
-    REP(i, 1, n) REP(j, i + 1, n)
+    REP(i, 1, n) REP(j, i + 1, n) if (match[i][j])
     {
         ++nn;
         de(nn, j, match[i][j]);
@@ -74,25 +74,24 @@ bool bfs()
 {
     REP(i, 0, nn) d[i] = 0;
     d[s] = 1;
-    deque<int> Q;
-    Q.push_back(s);
+    queue<int> Q;
+    Q.push(s);
 
-    while(Q.size())
+    while(!Q.empty())
     {
         int u = Q.front();
-        if (u == t) return 1;
-        Q.pop_front();
+        Q.pop();
 
         FOR(i, 0, (int)a[u].size())
         {
             int x = a[u][i], v = target[u][i];
             if (f[x] >= c[x] || d[v]) continue;
             d[v] = d[u] + 1;
-            Q.pb(v);
+            Q.push(v);
         }
     }
 
-    return 0;
+    return (d[t] != 0);
 }
 
 LL dfs(int u, LL max_flow)
@@ -132,8 +131,8 @@ bool check(int u)
 
 int main()
 {
-    //freopen("D:\\test.txt", "r", stdin);
-    //freopen("D:\\test2.txt", "w", stdout);
+    freopen("D:\\test.txt", "r", stdin);
+    freopen("D:\\test2.txt", "w", stdout);
     ios::sync_with_stdio(false); cin.tie(NULL);
     int t; cin >> t;
 
