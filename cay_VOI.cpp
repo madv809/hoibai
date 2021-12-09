@@ -37,7 +37,7 @@ int d[mxk], n, m, nn, s, t, st;
 // em chuyển sang lưu các cung, mỗi cung xuất phát từ đỉnh u sẽ được lưu trong vector a[u] và có thông tin gồm {v, m}
 // với v là điểm kết thúc của cung đó và m là cung ngược của cung hiện tại (phục vụ mục đích tăng giảm luồng)
 // v được lưu trong target, còn m được lưu trong op
-// a[i] là danh sách các CẠNH của i
+// a[i] là danh sách các CUNG của i
 
 
 // cái này để tạo cạnh
