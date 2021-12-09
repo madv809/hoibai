@@ -25,6 +25,22 @@ vector<int> a[mxk], target[mxk], op[mxk];
 LL match[mxn][mxn], win[mxn], max_win[mxn], f[4*mxk], c[4*mxk], global_match;
 int d[mxk], n, m, nn, s, t, st;
 
+// match và win là số trận đấu như dữ kiện đề cho
+// global_match là tổng số trận đấu sẽ xảy ra
+// max_win[i] là số trận nhiều nhất mà i có thể thắng được
+// f và c là luồng và cap của cạnh
+// d là mảng dùng cho bfs, s, t là đỉnh nguồn và thu
+// n là số node ban đầu, nn là số lượng node sau khi tạo ra thêm các đỉnh ảo
+// m là số cạnh của đồ thị
+
+// do giới hạn bộ nhớ, thay vì dùng mảng 2 chiều để biểu thị cung (u, v)
+// em chuyển sang lưu các cung, mỗi cung sẽ có thông tin gồm {v, m}
+// với v là điểm kết thúc của cung đó và m là cung ngược của cung hiện tại
+// v được lưu trong target, còn m được lưu trong op
+// a[i] là danh sách các CẠNH của i
+
+
+// cái này để tạo cạnh
 void de(int u, int v, LL cap)
 {
     ++m;
@@ -40,6 +56,7 @@ void de(int u, int v, LL cap)
     c[m] = 0;
 }
 
+// tạo đồ thị
 void creat_graph()
 {
     s = m = 0;
@@ -70,6 +87,7 @@ void creat_graph()
     }
 }
 
+// bfs dùng cho luồng
 bool bfs()
 {
     REP(i, 0, nn) d[i] = 0;
@@ -94,6 +112,7 @@ bool bfs()
     return (d[t] != 0);
 }
 
+// dfs dùng cho luồng
 LL dfs(int u, LL max_flow)
 {
     if (u == t) return max_flow;
@@ -112,6 +131,7 @@ LL dfs(int u, LL max_flow)
     return 0;
 }
 
+// check xem đỉnh u có thỏa mãn không
 bool check(int u)
 {
     REP(i, st, m) c[i] += max_win[u];
@@ -138,6 +158,7 @@ int main()
 
     while(t--)
     {
+        // đọc dữ liệu
         cin >> n;
         REP(i, 1, n)
         {
@@ -149,6 +170,7 @@ int main()
             }
         }
 
+        // mx là số trận nhiều nhất mà 1 người nào nó có thể thắng
         LL mx = global_match = 0;
         REP(i, 1, n)
         {
@@ -158,6 +180,7 @@ int main()
         }
         global_match >>= 1;
 
+        // tạo đồ thị
         creat_graph();
         //cout << nn << ' ' << m; return 0;
 
@@ -167,6 +190,8 @@ int main()
 
         cout << res.size() << ' ';
         for (int x : res) cout << x << ' '; cout << "\n";
+
+        // reset lại các thông tin này
         REP(i, 0, nn)
         {
             a[i].clear();
