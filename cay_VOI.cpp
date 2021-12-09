@@ -131,8 +131,8 @@ bool check(int u)
 
 int main()
 {
-    freopen("D:\\test.txt", "r", stdin);
-    freopen("D:\\test2.txt", "w", stdout);
+    //freopen("D:\\test.txt", "r", stdin);
+    //freopen("D:\\test2.txt", "w", stdout);
     ios::sync_with_stdio(false); cin.tie(NULL);
     int t; cin >> t;
 
