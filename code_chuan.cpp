@@ -17,7 +17,7 @@ template <typename T> inline void read(T &x)
 	if (isNegative) x = -x;
 }
 
-template<typename T, typename... Args> void read(T &x, Args&... args) 
+template<typename T, typename... Args> void read(T &x, Args&... args)
 {
     read(x);
     read(args...);
@@ -116,59 +116,10 @@ int n;
 int a[maxn][maxn], w[maxn];
 int id[maxn][maxn];
 
-namespace BurteForce
-{
-    int m;
-    vector < pair <int, int> > matchs;
-    bool ok[maxn];
-
-    void update()
-    {
-        int best = 0;
-        for(int i = 1; i <= n; i++)
-            best = max(best, w[i]);
-        for(int i = 1; i <= n; i++)
-            if (best == w[i]) ok[i] = true;
-    }
-
-    void Try(int i)
-    {
-        for(int j = 0; j < 2; j++)
-        {
-            if (j) w[matchs[i].second]++;
-            else w[matchs[i].first]++;
-            if (i < m -1) Try(i + 1);
-            else update();
-            if (j) w[matchs[i].second]--;
-            else w[matchs[i].first]--;
-        }
-    }
-
-    void solve()
-    {
-        matchs.clear();
-        for(int i = 1; i <= n; i++)
-            for(int j = i + 1; j <= n; j++)
-                for(int k = 0; k < a[i][j]; k++) matchs.push_back(make_pair(i, j)); 
-        m = matchs.size();
-        assert(m <= 25);
-        for(int i = 1; i <= n; i++) ok[i] = false;
-        if (m == 0)
-            update();
-        else Try(0);
-        vector <int> res;
-        for(int i = 1; i <= n; i++) 
-            if (ok[i]) res.push_back(i);
-        cout << (int)res.size();
-        for(int x : res)
-            cout << ' ' << x;
-    }
-};
-
 void readInput()
 {
     read(n);
-    for(int i = 1; i <= n; i++) 
+    for(int i = 1; i <= n; i++)
         for(int j = 1; j <= n; j++) read(a[i][j]);
     for(int i = 1; i <= n; i++) read(w[i]);
 }
@@ -229,7 +180,7 @@ void solve()
 }
 
 int main()
-{   
+{
     int nTest;
     read(nTest);
     while (nTest--)
@@ -237,5 +188,5 @@ int main()
         readInput();
         solve();
         if (nTest) cout << '\n';
-    }    
+    }
 }
