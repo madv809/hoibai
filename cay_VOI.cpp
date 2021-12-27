@@ -15,138 +15,147 @@
 #define pb push_back
 #define ef else if
 using namespace std;
-const int mxn = 1e2 + 5;
-const int mxk = 2e4 + 155;
-const LL INF = 1e15;
+const int mxn = 2e5 + 5;
+const int mxk = 1e7;
+const int S = 200;
+const long double eps = 1e-10;
+const int INF = 1e9;
 const int lg = 16;
 const LL base = 311;
 const LL MOD = 1e9 + 7;
-vector<int> a[mxk], target[mxk], op[mxk];
-LL match[mxn][mxn], win[mxn], max_win[mxn], f[4*mxk], c[4*mxk], global_match;
-int d[mxk], n, m, nn, s, t, st;
+vector<int> a[mxn], sta;
+vector<pii> bridge;
+int par[lg + 1][mxn], st[mxn], ed[mxn], bit[mxn], num[mxn], low[mxn], d[mxn], comp[mxn], ti, t, n, m;
 
-// match và win là số trận đấu và số trận đã thắng như dữ kiện đề cho
-// global_match là tổng số trận đấu sẽ xảy ra
-// max_win[i] là số trận nhiều nhất mà i có thể thắng được
-// f và c là luồng và cap của cạnh
-// d là mảng dùng cho bfs, s, t là đỉnh nguồn và thu
-// n là số node ban đầu, nn là số lượng node sau khi tạo ra thêm các đỉnh ảo
-// m là số cạnh của đồ thị
-
-// do giới hạn bộ nhớ, thay vì dùng mảng 2 chiều để biểu thị cung (u, v)
-// em chuyển sang lưu các cung, mỗi cung xuất phát từ đỉnh u sẽ được lưu trong vector a[u] và có thông tin gồm {v, m}
-// với v là điểm kết thúc của cung đó và m là cung ngược của cung hiện tại (phục vụ mục đích tăng giảm luồng)
-// v được lưu trong target, còn m được lưu trong op
-// a[i] là danh sách các CUNG của i
-
-
-// cái này để tạo cạnh
-void de(int u, int v, LL cap)
+void up(int x, int val)
 {
-    ++m;
-    a[u].pb(m);
-    target[u].pb(v);
-    op[u].pb(m + 1);
-    c[m] = cap;
-
-    ++m;
-    a[v].pb(m);
-    target[v].pb(u);
-    op[v].pb(m - 1);
-    c[m] = 0;
-}
-
-// tạo đồ thị
-void creat_graph()
-{
-    s = m = 0;
-    nn = n;
-
-    REP(i, 1, n) REP(j, i + 1, n) if (match[i][j])
+    while(x <= n)
     {
-        ++nn;
-        de(nn, j, match[i][j]);
-        de(nn, i, match[j][i]);
-
-        ++m;
-        a[s].pb(m);
-        target[s].pb(nn);
-        op[s].pb(-1);
-        c[m] = match[i][j];
-    }
-    t = ++nn;
-
-    st = m + 1;
-    REP(i, 1, n)
-    {
-        ++m;
-        a[i].pb(m);
-        target[i].pb(t);
-        op[i].pb(-1);
-        c[m] = -win[i];
+        bit[x] += val;
+        x += x&-x;
     }
 }
 
-// bfs dùng cho luồng
-bool bfs()
+void update(int l, int r, int val)
 {
-    REP(i, 0, nn) d[i] = 0;
-    d[s] = 1;
-    queue<int> Q;
-    Q.push(s);
+    up(l, val);
+    up(r + 1, -val);
+}
 
-    while(!Q.empty())
+int get(int x)
+{
+    int res = 0;
+
+    while(x > 0)
     {
-        int u = Q.front();
-        Q.pop();
+        res += bit[x];
+        x -= x&-x;
+    }
+    return res;
+}
 
-        FOR(i, 0, (int)a[u].size())
+void dfs_make_comp(int u, int p)
+{
+    num[u] = low[u] = ++ti;
+    for (int v : a[u]) if (v != p)
+    {
+        if (num[v]) low[u] = min(low[u], num[v]);
+        else
         {
-            int x = a[u][i], v = target[u][i];
-            if (f[x] >= c[x] || d[v]) continue;
-            d[v] = d[u] + 1;
-            Q.push(v);
+            dfs_make_comp(v, u);
+            low[u] = min(low[u], low[v]);
         }
     }
+    sta.pb(u);
 
-    return (d[t] != 0);
-}
-
-// dfs dùng cho luồng
-LL dfs(int u, LL max_flow)
-{
-    if (u == t) return max_flow;
-    FOR(i, 0, (int)a[u].size())
+    if (num[u] == low[u])
     {
-        int x = a[u][i], v = target[u][i];
-        if (f[x] >= c[x] || d[v] != d[u] + 1) continue;
-        LL tt = dfs(v, min(max_flow, c[x] - f[x]));
-        if (tt)
+        ++n;
+        bridge.pb({p, u});
+
+        while(sta.size())
         {
-            f[x] += tt;
-            if (op[u][i] != -1) f[op[u][i]] -= tt;
-            return tt;
+            comp[sta.back()] = n;
+            sta.pop_back();
         }
     }
-    return 0;
 }
 
-// check xem đỉnh u có thỏa mãn không
-bool check(int u)
+void dfs(int u, int p)
 {
-    REP(i, st, m) c[i] += max_win[u];
-    REP(i, 1, m) f[i] = 0;
-
-    LL res = 0, x;
-    while(bfs())
+    st[u] = ++t;
+    for (int v : a[u]) if (v != p)
     {
-        while(x = dfs(s, INF))
-            res += x;
+        par[0][v] = u;
+        d[v] = d[u] + 1;
+        dfs(v, u);
     }
 
-    REP(i, st, m) c[i] -= max_win[u];
-    if (res == global_match) return 1;
-    return 0;
+    ed[u] = t;
+}
+
+void calc_something()
+{
+    cin >> n >> m;
+    int u, v;
+    REP(i, 1, m)
+    {
+        cin >> u >> v;
+        a[u].pb(v); a[v].pb(u);
+    }
+
+    n = 0;
+    dfs_make_comp(1, 0);
+    REP(u, 1, n) a[u].clear();
+    FOR(i, 0, (int)bridge.size())
+    {
+        u = comp[bridge[i].X]; v = comp[bridge[i].Y];
+        if (u == 0) continue;
+        a[u].pb(v); a[v].pb(u);
+    }
+
+    dfs(1, 0);
+    REP(i, 1, lg) REP(u, 1, n)
+        par[i][u] = par[i - 1][par[i - 1][u]];
+    st[0] = -INF; ed[0] = INF;
+
+    REP(u, 1, n) update(st[u], st[u], d[u]);
+}
+
+bool is_par(int u, int v)
+{
+    return (st[u] <= st[v] && ed[u] >= ed[v]);
+}
+
+int lca(int u, int v)
+{
+    if (is_par(u, v)) return u;
+    if (is_par(v, u)) return v;
+
+    RED(i, lg, 0) if (!is_par(par[i][u], v))
+        u = par[i][u];
+
+    return par[0][u];
+}
+
+int find_next(int u)
+{
+    int x = get(st[u]);
+    RED(i, lg, 0) if (get(st[par[i][u]]) == x)
+        u = par[i][u];
+
+    if (u == 1) return 0;
+    return u;
+}
+
+void query(int u, int x)
+{
+    while(1)
+    {
+        u = find_next(u);
+        if (is_par(u, x)) return;
+        update(st[u], ed[u], -1);
+    }
 }
 
 int main()
@@ -154,49 +163,22 @@ int main()
     //freopen("D:\\test.txt", "r", stdin);
     //freopen("D:\\test2.txt", "w", stdout);
     ios::sync_with_stdio(false); cin.tie(NULL);
-    int t; cin >> t;
+    calc_something();
 
-    while(t--)
+    int u, v, t, x;
+    while(cin >> t)
     {
-        // đọc dữ liệu
-        cin >> n;
-        REP(i, 1, n)
+        if (t == 0) break;
+        cin >> u >> v;
+        u = comp[u]; v = comp[v];
+        x = lca(u, v);
+        if (t == 2)
         {
-            max_win[i] = 0;
-            REP(j, 1, n)
-            {
-                cin >> match[i][j];
-                max_win[i] += match[i][j];
-            }
+            cout << (get(st[u]) + get(st[v]) - 2*get(st[x])) << "\n";
+            continue;
         }
 
-        // mx là số trận nhiều nhất mà 1 người nào nó có thể thắng
-        LL mx = global_match = 0;
-        REP(i, 1, n)
-        {
-            cin >> win[i]; mx = max(mx, win[i]);
-            global_match += max_win[i];
-            max_win[i] += win[i];
-        }
-        global_match >>= 1;
-
-        // tạo đồ thị
-        creat_graph();
-        //cout << nn << ' ' << m; return 0;
-
-        vector<int> res;
-        REP(i, 1, n) if (max_win[i] >= mx && check(i))
-            res.pb(i);
-
-        cout << res.size() << ' ';
-        for (int x : res) cout << x << ' '; cout << "\n";
-
-        // reset lại các thông tin này
-        REP(i, 0, nn)
-        {
-            a[i].clear();
-            target[i].clear();
-            op[i].clear();
-        }
+        query(u, x);
+        query(v, x);
     }
 }
